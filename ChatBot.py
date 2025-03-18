@@ -7,6 +7,8 @@ import random
 
 # Load or initialize knowledge base
 KNOWLEDGE_FILE = 'knowledge.json'
+BOT_NAME = "Ciri"
+
 if os.path.exists(KNOWLEDGE_FILE):
     with open(KNOWLEDGE_FILE, 'r') as f:
         knowledge = json.load(f)
@@ -37,7 +39,10 @@ def learn_fact(user_input):
     return None
 
 def recall_fact(user_input):
-    # Match patterns like: "What is my name?"
+    if "your name" in user_input.lower():
+        return f"My name is {BOT_NAME}."
+    
+    # Match patterns like: "What is X?"
     match = re.search(r'what is (.*)\??', user_input.lower())
     if match:
         key = match.group(1).strip()
