@@ -74,7 +74,8 @@ def chatbot_response(user_input):
         return "Hello! How can I help you?"
 
     # Try grammar correction
-    if not user_input.lower().startswith("what is"):
+    skip_correction_keywords = ["what", "who","where", "are you", "my name", "your name"]
+    if not any(kw in user_input.lower() for kw in skip_correction_keywords):
         corrected = correct_grammar(user_input)
         if corrected != user_input:
             return f"I think you meant: '{corrected}'"
