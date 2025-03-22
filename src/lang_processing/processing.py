@@ -11,6 +11,8 @@ nlp = spacy.load("en_core_web_sm")
 # Verificação gramatical
 grammar_tool = LanguageTool('en-US')
 
+ignored_spellcheck_rules = ["UPPERCASE_SENTENCE_START"]
+
 def detect_intent(text):
     text = text.lower().strip()
     for intent, pattern in intent_patterns.items():

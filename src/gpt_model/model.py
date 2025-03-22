@@ -5,6 +5,9 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
 def generate_response(user_input, max_length=100):
+    if tokenizer.pad_token is None:
+        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+        
     input_ids = tokenizer.encode(
         user_input + tokenizer.eos_token,
         return_tensors="pt",
