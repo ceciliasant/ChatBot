@@ -73,15 +73,22 @@ def main_chat_loop():
                 relation_type, entity = match.group(1), match.group(3)
 
                 #  Get type of question
-                relation_key = get_relation_key(relation_type.lower())
+                r_keys = get_relation_key(relation_type.lower())
 
-                fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
+                gotAFact = False
+
+                for relation_key in r_keys:
+                    fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
                 
-                if fact:
-                    print(f"Bot: {entity.capitalize()} {fact.fact_type} {fact.value}.")
-                else:
+                    if fact:
+                        gotAFact = True
+                        print(f"Bot: {entity.capitalize()} {fact.fact_type} {fact.value}.")
+                        break
+
+                if (gotAFact == False):
                     print(f"Bot: I don't know anything about {relation_type.lower()} is {entity}.")
             
+
             #  WHAT/WHERE DOES/did
             elif match := re.search(r"^(What|Where) (does|did) (.+?) (" + "|".join(map(re.escape, RELATION_VALUES)) + r")(\?|$)", user_input, re.IGNORECASE):
                 entity, relation_type = match.group(3), match.group(4)

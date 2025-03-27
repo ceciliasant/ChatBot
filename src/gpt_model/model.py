@@ -14,7 +14,7 @@ def generate_response(user_input, max_length=100):
         padding=True
     )
 
-    attention_mask = input_ids["attention_mask"]
+    #attention_mask = input_ids["attention_mask"]
 
     response_ids = model.generate(
         input_ids,
@@ -24,6 +24,6 @@ def generate_response(user_input, max_length=100):
         do_sample=True,
         top_p=0.95,
         no_repeat_ngram_size=3,
-        attention_mask=attention_mask
+        #attention_mask=attention_mask
     )
     return tokenizer.decode(response_ids[:, input_ids.shape[-1]:][0], skip_special_tokens=True)
