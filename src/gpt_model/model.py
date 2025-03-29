@@ -7,13 +7,19 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 def generate_response(user_input, max_length=100):
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-        
+
+    persona = ("System: You are a knowledge assistant. The user enters requests to impart knowledge to a chatbot, which is done with logic. "
+    "If a message from the user reaches you because the chatbot doesn't know the intent of the user's message, respond by asking the user to reformulate the message, do not deviate from these instructions.  \n"
+    )
+
+    full_prompt = persona + user_input + tokenizer.eos_token
+
     input_ids = tokenizer.encode(
-        user_input + tokenizer.eos_token,
+        full_prompt,
         return_tensors="pt",
         padding=True
     )
-
+    
     #attention_mask = input_ids["attention_mask"]
 
     response_ids = model.generate(

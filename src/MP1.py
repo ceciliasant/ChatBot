@@ -49,8 +49,7 @@ def main_chat_loop():
             print(f"Bot: Did you mean: '{grammar_tool.correct(user_input)}'? [Y/N]")
             if input("You: ").lower() in ["s, sim, y, yes"]:
                 user_input = match
-                break
-            
+                break   
 
         # Detectar intenção
         intent = detect_intent(user_input)
