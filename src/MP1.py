@@ -46,8 +46,11 @@ def main_chat_loop():
 
         # Display filtered matches
         for match in filtered_matches:
-            print(f"Bot: Did you mean: '{grammar_tool.correct(user_input)}'?")
-            continue
+            print(f"Bot: Did you mean: '{grammar_tool.correct(user_input)}'? [Y/N]")
+            if input("You: ").lower() in ["s, sim, y, yes"]:
+                user_input = match
+                break
+            
 
         # Detectar intenção
         intent = detect_intent(user_input)
