@@ -15,17 +15,22 @@ from know_manipulation.user_fact import UserFact
 from know_manipulation.fact_types import RELATION_KEYS, RELATION_VALUES, get_relation_key
 
 # --------------------------
-# 2. Import backup language model (DialoGPT)
+# 3. Import backup language model (DialoGPT)
 # --------------------------
 from gpt_model.model import generate_response
 
 # --------------------------
-# 4. Detecção de Intenções (Corrigida)
+# 4. Import external APIs
+# --------------------------
+from external_apis.weather import get_weather
+
+# --------------------------
+# 5. Detecção de Intenções (Corrigida)
 # --------------------------
 from lang_processing.processing import detect_intent
 
 # --------------------------
-# 5. Loop Principal de Conversação
+# 6. Loop Principal de Conversação
 # --------------------------
 def main_chat_loop():
     user_id = "user_123"
@@ -70,8 +75,16 @@ def main_chat_loop():
         
         elif intent == "retrieve_info":
             
+            
+            #  WEATHER
+            if match := re.search(r"weather|rain|sun|temperature", user_input, re.IGNORECASE):
+                city_match = re.search(r"in (\w+)", user_input, re.IGNORECASE)
+                city = city_match.group(1) if city_match else "Aveiro"
+                weather_info = get_weather(city)
+                print(f"Bot: {weather_info}")
+
             #  IS/ARE
-            if match := re.search(r"^(" + "|".join(map(re.escape, RELATION_VALUES)) + r") (is|are) (.+?)(\?|$)", user_input, re.IGNORECASE):
+            elif match := re.search(r"^(" + "|".join(map(re.escape, RELATION_VALUES)) + r") (is|are) (.+?)(\?|$)", user_input, re.IGNORECASE):
                 relation_type, entity = match.group(1), match.group(3)
 
                 #  Get type of question
@@ -89,7 +102,6 @@ def main_chat_loop():
 
                 if (gotAFact == False):
                     print(f"Bot: I don't know anything about {relation_type.lower()} is {entity}.")
-            
 
             #  WHAT/WHERE DOES/did
             elif match := re.search(r"^(What|Where) (does|did) (.+?) (" + "|".join(map(re.escape, RELATION_VALUES)) + r")(\?|$)", user_input, re.IGNORECASE):
@@ -107,9 +119,6 @@ def main_chat_loop():
             
             else:
                 print("Bot: Could you specify what you're asking about?")
-        
-        elif intent == "ask_weather":
-            print("Bot: Currently, it's sunny with 25°C. (Weather API placeholder)")
 
         else:  # Fallback generativo
             response = generate_response(user_input)
