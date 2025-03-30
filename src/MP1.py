@@ -64,14 +64,29 @@ def main_chat_loop():
             print("Bot: Hello! How can I help you today?")
         
         elif intent == "store_fact":
-            #if match := re.search(r" (?:the|a|my) (\w+) (is|are) (.+?)(\.|$)", user_input, re.IGNORECASE):
             if match := re.search(r"^(.+?) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\.|$)", user_input, re.IGNORECASE):
                 entity, relation_type, state = match.group(1).split(" ")[-1], match.group(2), match.group(3).split(" ")[-1]
-                session.add(UserFact(user_id=user_id, key=entity.lower(), value=state.lower(), fact_type=relation_type))
-                session.commit()
-                print(f"Bot: Noted! {entity.capitalize()} {relation_type} {state}.")
+                existing_fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type=relation_type).first()
+                
+                if existing_fact:
+                    if existing_fact.value.lower() == state.lower():
+                        print(f"Bot: You already told me that {entity} {relation_type} {state}.")
+                    else:
+                        print(f"Bot: You said before that {entity} {relation_type} {existing_fact.value}. Do you want to update it? [Y/N]")
+                        answer = input("You: ").strip().lower()
+                        if answer in ["y", "yes", "s", "sim"]:
+                            existing_fact.value = state
+                            session.commit()
+                            print(f"Bot: Updated! {entity.capitalize()} {relation_type} {state}.")
+                        else:
+                            print("Bot: Got it. I won't change anything.")
+                else:
+                    session.add(UserFact(user_id=user_id, key=entity.lower(), value=state.lower(), fact_type=relation_type))
+                    session.commit()
+                    print(f"Bot: Noted! {entity.capitalize()} {relation_type} {state}.")
             else:
                 print("Bot: I don't know how to process this information!")
+
         
         elif intent == "retrieve_info":
             
@@ -113,7 +128,7 @@ def main_chat_loop():
                         break
 
                 if not gotAFact:
-                    print(f"Bot: I don't know anything about {relation_type.lower()} is {entity}.")
+                    print(f"Bot: I don't know anything about {user_input.lower()[:-1]}.")
 
             #  WHAT/WHERE DOES/did
             elif match := re.search(r"^(What|Where|Who) (does|did) (.+?) (" + "|".join(map(re.escape, RELATION_VALUES)) + r")(\?|$)", user_input, re.IGNORECASE):
@@ -145,7 +160,7 @@ def main_chat_loop():
                         break
 
                 if not gotAFact:
-                    print(f"Bot: I don't know anything about {user_input[:-1]}.")
+                    print(f"Bot: I don't know anything about {user_input.lower()[:-1]}.")
             
             #  WHAT/WHERE/WHO does WHAT
             elif match := re.search(r"^(What|Where|Who) (" + "|".join(map(re.escape, [r + "s" for r in RELATION_VALUES])) + r") (.+?)(\?|$)", user_input, re.IGNORECASE):
@@ -178,7 +193,7 @@ def main_chat_loop():
                         break
 
                 if not gotAFact:
-                    print(f"Bot: I don't know anything about {user_input}.")
+                    print(f"Bot: I don't know anything about {user_input.lower()[:-1]}.")
             
             else:
                 print("Bot: Could you specify what you're asking about?")
