@@ -75,7 +75,7 @@ def main_chat_loop():
                         print(f"Bot: You said before that {entity} {relation_type} {existing_fact.value}. Do you want to update it? [Y/N]")
                         answer = input("You: ").strip().lower()
                         if answer in ["y", "yes", "s", "sim"]:
-                            existing_fact.value = state
+                            existing_fact.value = state.lower()
                             session.commit()
                             print(f"Bot: Updated! {entity.capitalize()} {relation_type} {state}.")
                         else:
@@ -163,12 +163,9 @@ def main_chat_loop():
                     print(f"Bot: I don't know anything about {user_input.lower()[:-1]}.")
             
             #  WHAT/WHERE/WHO does WHAT
-            elif match := re.search(r"^(What|Where|Who) (" + "|".join(map(re.escape, [r + "s" for r in RELATION_VALUES])) + r") (.+?)(\?|$)", user_input, re.IGNORECASE):
+            elif match := re.search(r"^(What|Where|Who) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\?|$)", user_input, re.IGNORECASE):
 
                 entity, relation_type = match.group(3).split(" ")[-1], match.group(2)
-
-                #  Get type of question
-                r_keys = get_relation_key(relation_type.lower()[:-1])
 
                 alias_list = [entity]
 
@@ -181,16 +178,13 @@ def main_chat_loop():
                 gotAFact = False
 
                 for alias in alias_list:
-                    for relation_key in r_keys:
-                        fact = session.query(UserFact).filter_by(user_id=user_id, value=alias.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
-                    
-                        if fact:
-                            gotAFact = True
-                            print(f"Bot: {fact.key.capitalize()} {fact.fact_type} {entity}.")
-                            break
-                    
-                    if gotAFact:
+                    fact = session.query(UserFact).filter_by(user_id=user_id, value=alias.lower(), fact_type=relation_type).order_by(UserFact.id.desc()).first()
+                
+                    if fact:
+                        gotAFact = True
+                        print(f"Bot: {fact.key.capitalize()} {fact.fact_type} {entity}.")
                         break
+                
 
                 if not gotAFact:
                     print(f"Bot: I don't know anything about {user_input.lower()[:-1]}.")
