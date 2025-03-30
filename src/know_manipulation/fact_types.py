@@ -5,7 +5,7 @@ FACT_TYPES = {
     "has": ["have"],         #  Possession-based
     "owns": ["own"],         #  Ownership
     "knows": ["know"],       #  Relationship
-    "likes": ["likes"],      #  Preference
+    "likes": ["like"],      #  Preference
     "works at": ["work"],    #  Employment
     "lives in": ["live"],    #  Residence
     "created": ["create"],   #  Creation

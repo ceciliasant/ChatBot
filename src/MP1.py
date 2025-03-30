@@ -66,8 +66,8 @@ def main_chat_loop():
         elif intent == "store_fact":
             #if match := re.search(r" (?:the|a|my) (\w+) (is|are) (.+?)(\.|$)", user_input, re.IGNORECASE):
             if match := re.search(r"^(.+?) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\.|$)", user_input, re.IGNORECASE):
-                entity, relation_type, state = match.group(1), match.group(2), match.group(3)
-                session.add(UserFact(user_id=user_id, key=entity.lower(), value=state, fact_type=relation_type))
+                entity, relation_type, state = match.group(1).split(" ")[-1], match.group(2), match.group(3).split(" ")[-1]
+                session.add(UserFact(user_id=user_id, key=entity.lower(), value=state.lower(), fact_type=relation_type))
                 session.commit()
                 print(f"Bot: Noted! {entity.capitalize()} {relation_type} {state}.")
             else:
@@ -85,37 +85,100 @@ def main_chat_loop():
 
             #  IS/ARE
             elif match := re.search(r"^(" + "|".join(map(re.escape, RELATION_VALUES)) + r") (is|are) (.+?)(\?|$)", user_input, re.IGNORECASE):
-                relation_type, entity = match.group(1), match.group(3)
+                relation_type, entity = match.group(1), match.group(3).split(" ")[-1]
 
                 #  Get type of question
                 r_keys = get_relation_key(relation_type.lower())
 
+                alias_list = [entity]
+
+                #  Search for alias or other "is_a" relations for the subject
+                alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")                
+
+                for row in alias_facts:
+                    alias_list.append(row.value)
+
                 gotAFact = False
 
-                for relation_key in r_keys:
-                    fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
-                
+                for alias in alias_list:
+                    for relation_key in r_keys:
+                        fact = session.query(UserFact).filter_by(user_id=user_id, key=alias.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
+                    
+                        if fact:
+                            gotAFact = True
+                            print(f"Bot: The {entity.capitalize()} {fact.fact_type} the {fact.value}.")
+                            break
+                    
                     if fact:
-                        gotAFact = True
-                        print(f"Bot: {entity.capitalize()} {fact.fact_type} {fact.value}.")
                         break
 
-                if (gotAFact == False):
+                if not gotAFact:
                     print(f"Bot: I don't know anything about {relation_type.lower()} is {entity}.")
 
             #  WHAT/WHERE DOES/did
-            elif match := re.search(r"^(What|Where) (does|did) (.+?) (" + "|".join(map(re.escape, RELATION_VALUES)) + r")(\?|$)", user_input, re.IGNORECASE):
-                entity, relation_type = match.group(3), match.group(4)
+            elif match := re.search(r"^(What|Where|Who) (does|did) (.+?) (" + "|".join(map(re.escape, RELATION_VALUES)) + r")(\?|$)", user_input, re.IGNORECASE):
+                entity, relation_type = match.group(3).split(" ")[-1], match.group(4)
 
                 #  Get type of question
-                relation_key = get_relation_key(relation_type.lower())
+                r_keys = get_relation_key(relation_type.lower())
 
-                fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
-                
-                if fact:
-                    print(f"Bot: {entity.capitalize()} {fact.fact_type} {fact.value}.")
-                else:
-                    print(f"Bot: I don't know anything about {relation_type.lower()} is {entity}.")
+                alias_list = [entity]
+
+                #  Search for alias or other "is_a" relations for the subject
+                alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")                
+
+                for row in alias_facts:
+                    alias_list.append(row.value)
+
+                gotAFact = False
+
+                for alias in alias_list:
+                    for relation_key in r_keys:
+                        fact = session.query(UserFact).filter_by(user_id=user_id, key=alias.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
+                    
+                        if fact:
+                            gotAFact = True
+                            print(f"Bot: {entity.capitalize()} {fact.fact_type} {fact.value}.")
+                            break
+                    
+                    if gotAFact:
+                        break
+
+                if not gotAFact:
+                    print(f"Bot: I don't know anything about {user_input[:-1]}.")
+            
+            #  WHAT/WHERE/WHO does WHAT
+            elif match := re.search(r"^(What|Where|Who) (" + "|".join(map(re.escape, [r + "s" for r in RELATION_VALUES])) + r") (.+?)(\?|$)", user_input, re.IGNORECASE):
+
+                entity, relation_type = match.group(3).split(" ")[-1], match.group(2)
+
+                #  Get type of question
+                r_keys = get_relation_key(relation_type.lower()[:-1])
+
+                alias_list = [entity]
+
+                #  Search for alias or other "is_a" relations for the subject
+                alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")                
+
+                for row in alias_facts:
+                    alias_list.append(row.value)
+
+                gotAFact = False
+
+                for alias in alias_list:
+                    for relation_key in r_keys:
+                        fact = session.query(UserFact).filter_by(user_id=user_id, value=alias.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
+                    
+                        if fact:
+                            gotAFact = True
+                            print(f"Bot: {fact.key.capitalize()} {fact.fact_type} {entity}.")
+                            break
+                    
+                    if gotAFact:
+                        break
+
+                if not gotAFact:
+                    print(f"Bot: I don't know anything about {user_input}.")
             
             else:
                 print("Bot: Could you specify what you're asking about?")
