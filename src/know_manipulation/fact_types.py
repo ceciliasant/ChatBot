@@ -8,8 +8,11 @@ FACT_TYPES = {
     "likes": ["like"],      #  Preference
     "works at": ["work"],    #  Employment
     "lives in": ["live"],    #  Residence
+    "was born in": ["born"], # nascimento
     "created": ["create"],   #  Creation
     "studies at": ["study"], #  Studies
+    "uses": ["use", "utilize"], # tool or resouce
+    "speaks": ["speak", "talk", "communicate"], # Language
 }
 
 RELATION_KEYS = FACT_TYPES.keys()
