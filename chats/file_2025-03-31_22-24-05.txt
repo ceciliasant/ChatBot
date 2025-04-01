@@ -1,3 +1,0 @@
-You: What is your purpose
-Bot: I'm not sure what you're trying to say.
-You: exit
