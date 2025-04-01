@@ -4,32 +4,44 @@ model_name = "microsoft/DialoGPT-medium"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
-def generate_response(user_input, max_length=100):
-    if tokenizer.pad_token is None:
-        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+# Define o token de padding para evitar erros
+tokenizer.pad_token = tokenizer.eos_token  
 
-    persona = ("System: You are a knowledge assistant. The user enters requests to impart knowledge to a chatbot, which is done with logic. "
-    "If a message from the user reaches you because the chatbot doesn't know the intent of the user's message, respond by asking the user to reformulate the message, do not deviate from these instructions.  \n"
+def generate_response(user_input, max_length=200):
+    persona = (
+        "System: You are an AI assistant specialized in knowledge-based chatbots. "
+        "Your role is to help refine user requests so they can be correctly interpreted by a chatbot. "
+        "If the chatbot does not understand the user's intent, your job is to ask the user to clarify or reformulate their message. "
+        "Always be concise and stay on topic. Do not provide responses outside of this scope. "
+        "Example: If the user asks 'Tell me something interesting,' you should reply: "
+        "'Could you clarify what topic interests you?' "
+        "User: \n"
     )
 
     full_prompt = persona + user_input + tokenizer.eos_token
 
-    input_ids = tokenizer.encode(
+    # Gera os tokens e a máscara de atenção corretamente
+    inputs = tokenizer(
         full_prompt,
         return_tensors="pt",
-        padding=True
+        padding=True,
+        truncation=False
     )
-    
-    #attention_mask = input_ids["attention_mask"]
+
+    input_ids = inputs["input_ids"]
+    attention_mask = inputs["attention_mask"]
 
     response_ids = model.generate(
         input_ids,
+        attention_mask=attention_mask,
         max_length=max_length,
         pad_token_id=tokenizer.eos_token_id,
-        temperature=0.7,
+        top_k=5,  # Reduzindo para permitir alguma variação, mas mantendo foco
+        top_p=0.7,  # Restringe a escolha de tokens mais prováveis
+        temperature=0.5,  # Reduzindo para tornar respostas mais determinísticas
         do_sample=True,
-        top_p=0.95,
-        no_repeat_ngram_size=3,
-        #attention_mask=attention_mask
-    )
+        repetition_penalty=1.5  # Penaliza repetições para evitar frases redundantes
+        )
+
     return tokenizer.decode(response_ids[:, input_ids.shape[-1]:][0], skip_special_tokens=True)
+
