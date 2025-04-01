@@ -1,47 +1,44 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM
 
-model_name = "microsoft/DialoGPT-medium"
+model_name = "google/flan-t5-large"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-# Define o token de padding para evitar erros
-tokenizer.pad_token = tokenizer.eos_token  
+# Configuração correta para T5 (não force pad_token = eos_token!)
+tokenizer.pad_token = tokenizer.eos_token  # Opcional, apenas se necessário
 
-def generate_response(user_input, max_length=200):
+def generate_response(user_input, max_length=400):
+    # Adicione um prefixo de tarefa claro ao prompt
     persona = (
         "System: You are an AI assistant specialized in knowledge-based chatbots. "
         "Your role is to help refine user requests so they can be correctly interpreted by a chatbot. "
-        "If the chatbot does not understand the user's intent, your job is to ask the user to clarify or reformulate their message. "
+        "If the chatbot does not understand the user's intent, your job is to say that you don't know the answer or don't understand the question and nothing more. "
         "Always be concise and stay on topic. Do not provide responses outside of this scope. "
-        "Example: If the user asks 'Tell me something interesting,' you should reply: "
-        "'Could you clarify what topic interests you?' "
-        "User: \n"
+        "And don't say 'There is no X at your location' or 'There is no X in your area' or something similar \n "
+        "User: "
     )
 
-    full_prompt = persona + user_input + tokenizer.eos_token
+    full_prompt = persona + user_input  # Remova o eos_token manual
 
-    # Gera os tokens e a máscara de atenção corretamente
     inputs = tokenizer(
         full_prompt,
         return_tensors="pt",
-        padding=True,
-        truncation=False
+        padding="max_length",  # Forçar padding consistente
+        truncation=True,
+        max_length=512  # T5 tem limite de 512 tokens
     )
 
-    input_ids = inputs["input_ids"]
-    attention_mask = inputs["attention_mask"]
-
+    # Geração ajustada para T5
     response_ids = model.generate(
-        input_ids,
-        attention_mask=attention_mask,
+        input_ids=inputs.input_ids,
+        attention_mask=inputs.attention_mask,
         max_length=max_length,
-        pad_token_id=tokenizer.eos_token_id,
-        top_k=5,  # Reduzindo para permitir alguma variação, mas mantendo foco
-        top_p=0.7,  # Restringe a escolha de tokens mais prováveis
-        temperature=0.5,  # Reduzindo para tornar respostas mais determinísticas
+        temperature=0.7,  # Mais flexibilidade
+        top_k=50,
+        top_p=0.95,
+        repetition_penalty=1.2,
         do_sample=True,
-        repetition_penalty=1.5  # Penaliza repetições para evitar frases redundantes
-        )
-
-    return tokenizer.decode(response_ids[:, input_ids.shape[-1]:][0], skip_special_tokens=True)
-
+        num_beams=3  # Busca em feixe para melhor coerência
+    )
+    
+    return tokenizer.decode(response_ids[0], skip_special_tokens=True)
