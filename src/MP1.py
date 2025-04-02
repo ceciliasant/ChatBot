@@ -35,7 +35,7 @@ from lang_processing.processing import detect_intent
 # Função para limpar artigos das entidades
 # --------------------------
 def clean_entity(text):
-    return re.sub(r"^(the|a|an)\\s+", "", text.strip(), flags=re.IGNORECASE)
+    return re.sub(r"^(the|a|an)\\s+", "", text.split(" ")[-1], flags=re.IGNORECASE)
 
 # --------------------------
 # 6. Loop Principal de Conversação
@@ -79,7 +79,7 @@ def main_chat_loop():
 
         elif intent == "store_fact":
             if match := re.search(r"^(.+?) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\.|$)", user_input, re.IGNORECASE):
-                entity, relation_type, state = clean_entity(match.group(1)), match.group(2), match.group(3)
+                entity, relation_type, state = clean_entity(match.group(1)), match.group(2), clean_entity(match.group(3))
                 existing_fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type=relation_type).first()
 
                 if existing_fact:
@@ -121,7 +121,7 @@ def main_chat_loop():
 
             # UPDATE FACT
             elif match := re.search(r"what is the (\w+) of (.+?)(\?|$)", user_input, re.IGNORECASE):
-                attribute, entity = match.group(1), clean_entity(match.group(2))
+                attribute, entity = clean_entity(match.group(1)), clean_entity(clean_entity(match.group(2)))
 
                 fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is").order_by(UserFact.id.desc()).first()
 
