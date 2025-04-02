@@ -1,0 +1,22 @@
+You: Hi
+Bot: Hello! How can I help you today?
+You: Tell me about sheep.
+Bot: I don’t have that in my knowledge base, but here’s what I know:
+Sheep are mammals
+You: Tell me a fact.
+Bot: Here's an interesting fact: a squid is a kind of animal
+You: Alice likes squids.
+Bot: You said before that Alice likes sheep. Do you want to update it? [Y/N]
+You: y
+Bot: Updated! Alice likes squids.
+You: What does Alice like?
+Bot: Alice likes squids.
+You: Is it raining in Porto?
+Bot: Currently, it's clear with 14°C in Porto.
+You: Tell me about cat.
+Bot: I don’t have that in my knowledge base, but here’s what I know:
+Cats are mammals
+You: Thank you
+Bot: I don’t have that in my knowledge base, but here’s what I know:
+The sex of a man is a matter of opinion.
+You: exit

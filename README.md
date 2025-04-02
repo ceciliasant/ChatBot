@@ -44,6 +44,8 @@ Run the project using:
 python MP1.py
 ```
 
+**Example Commands**
+
 | Intent              | User Input                     | Bot Response                                        |
 |---------------------|--------------------------------|-----------------------------------------------------|
 | **Store Fact**      | "Alice works at Google."      | "Noted! Alice works at Google."                    |

@@ -1,9 +1,0 @@
-You: hello
-Bot: Hello! How can I help you today?
-You: the car is in the shop
-Bot: Noted! The car is in the shop.
-You: where is the car?
-Bot: The The car is in the shop.
-You: exit
-You: y
-You: test1

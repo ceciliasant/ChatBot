@@ -1,0 +1,23 @@
+You: Hi
+Bot: Hello! How can I help you today?
+You: What does Alice like?
+Bot: Alice likes squids.
+You: What are squids
+Bot: I don’t have that in my knowledge base, but here’s what I know:
+Squids are a group of marine animals that live in the ocean.
+You: Thanks
+Bot: I don’t have that in my knowledge base, but here’s what I know:
+Squids are a group of marine animals that live in the ocean.
+You: Tell me a fact
+Bot: Here's an interesting fact: An example of a seasonal change is the change of the seasons
+You: 
+Bot: I don’t have that in my knowledge base, but here’s what I know:
+The symphony orchestra is a musical ensemble.
+You: Alice likes sheep.
+Bot: You said before that Alice likes squids. Do you want to update it? [Y/N]
+You: y
+Bot: Updated! Alice likes sheep.
+You: What killed the sheep
+Bot: I don’t have that in my knowledge base, but here’s what I know:
+A sheep is a mammal.
+You: exit

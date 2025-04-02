@@ -49,6 +49,10 @@ def main_chat_loop():
 
     while True:
         user_input = input("You: ").strip()
+
+        if not user_input.isprintable():  
+            print("Bot: Please enter a valid text query.")  
+            continue  
         conversation_log.append(f"You: {user_input}")
 
         if user_input.lower() == 'exit':
@@ -57,6 +61,10 @@ def main_chat_loop():
         # Verificação gramatical
         matches = grammar_tool.check(user_input)
         filtered_matches = [match for match in matches if match.ruleId not in ignored_spellcheck_rules]
+
+        if any(len(match.replacements) == 0 for match in filtered_matches):
+            print("Bot: I can't understand this query. Please rephrase.")
+            continue
 
         for match in filtered_matches:
             suggestion = grammar_tool.correct(user_input)
@@ -77,154 +85,165 @@ def main_chat_loop():
             print(f"Bot: {response}")
             conversation_log.append(f"Bot: {response}")
 
-        # elif intent == "store_fact":
-        #     if match := re.search(r"^(.+?) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\.|$)", user_input, re.IGNORECASE):
-        #         entity, relation_type, state = clean_entity(match.group(1)), match.group(2), match.group(3)
-        #         existing_fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type=relation_type).first()
+        elif intent == "vague_prompt":
+            response = "Here's an interesting fact: " + generate_response("Tell me a random fact.")
+            print(f"Bot: {response}")
+            conversation_log.append(f"Bot: {response}")
 
-        #         if existing_fact:
-        #             if existing_fact.value.lower() == state.lower():
-        #                 response = f"You already told me that {entity} {relation_type} {state}."
-        #             else:
-        #                 prompt = f"You said before that {entity} {relation_type} {existing_fact.value}. Do you want to update it? [Y/N]"
-        #                 print(f"Bot: {prompt}")
-        #                 conversation_log.append(f"Bot: {prompt}")
-        #                 answer = input("You: ").strip().lower()
-        #                 conversation_log.append(f"You: {answer}")
-        #                 if answer in ["y", "yes", "s", "sim"]:
-        #                     existing_fact.value = state.lower()
-        #                     session.commit()
-        #                     response = f"Updated! {entity.capitalize()} {relation_type} {state}."
-        #                 else:
-        #                     response = "Got it. I won't change anything."
-        #         else:
-        #             session.add(UserFact(user_id=user_id, key=entity.lower(), value=state.lower(), fact_type=relation_type))
-        #             session.commit()
-        #             response = f"Noted! {entity.capitalize()} {relation_type} {state}."
-        #     else:
-        #         response = "I don't know how to process this information!"
+        elif intent == "social":
+            print(f"Bot: You're welcome! 😊")
+            conversation_log.append(f"Bot: {response}")
 
-        #     print(f"Bot: {response}")
-        #     conversation_log.append(f"Bot: {response}")
+        elif intent == "store_fact":
+            if match := re.search(r"^(.+?) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\.|$)", user_input, re.IGNORECASE):
+                entity, relation_type, state = clean_entity(match.group(1)), match.group(2), match.group(3)
+                existing_fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type=relation_type).first()
 
+                if existing_fact:
+                    if existing_fact.value.lower() == state.lower():
+                        response = f"You already told me that {entity} {relation_type} {state}."
+                    else:
+                        prompt = f"You said before that {entity} {relation_type} {existing_fact.value}. Do you want to update it? [Y/N]"
+                        print(f"Bot: {prompt}")
+                        conversation_log.append(f"Bot: {prompt}")
+                        answer = input("You: ").strip().lower()
+                        conversation_log.append(f"You: {answer}")
+                        if answer in ["y", "yes", "s", "sim"]:
+                            existing_fact.value = state.lower()
+                            session.commit()
+                            response = f"Updated! {entity.capitalize()} {relation_type} {state}."
+                        else:
+                            response = "Got it. I won't change anything."
+                else:
+                    session.add(UserFact(user_id=user_id, key=entity.lower(), value=state.lower(), fact_type=relation_type))
+                    session.commit()
+                    response = f"Noted! {entity.capitalize()} {relation_type} {state}."
+            else:
+                response = "I don't know how to process this information!"
 
-
-        # elif intent == "retrieve_info":
-
-        #     # WEATHER
-        #     if match := re.search(r"weather|rain|sun|temperature", user_input, re.IGNORECASE):
-        #         city_match = re.search(r"in (\w+)", user_input, re.IGNORECASE)
-        #         city = city_match.group(1) if city_match else "Aveiro"
-        #         weather_info = get_weather(city)
-        #         print(f"Bot: {weather_info}")
-        #         conversation_log.append(f"Bot: {weather_info}")
-
-        #     # UPDATE FACT
-        #     elif match := re.search(r"what is the (\w+) of (.+?)(\?|$)", user_input, re.IGNORECASE):
-        #         attribute, entity = match.group(1), clean_entity(match.group(2))
-
-        #         fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is").order_by(UserFact.id.desc()).first()
-
-        #         if fact:
-        #             response = f"The {attribute} of the {entity} is {fact.value}."
-        #         else:
-        #             response = f"I don't know the {attribute} of the {entity}."
-
-        #         print(f"Bot: {response}")
-        #         conversation_log.append(f"Bot: {response}")
+            print(f"Bot: {response}")
+            conversation_log.append(f"Bot: {response}")
 
 
 
-        #     # IS/ARE
-        #     elif match := re.search(r"^(" + "|".join(map(re.escape, RELATION_VALUES)) + r") (is|are) (.+?)(\?|$)", user_input, re.IGNORECASE):
-        #         relation_type, entity = match.group(1), clean_entity(match.group(3))
-        #         r_keys = get_relation_key(relation_type.lower())
+        elif intent == "retrieve_info":
 
-        #         alias_list = [entity]
-        #         alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")
-        #         for row in alias_facts:
-        #             alias_list.append(row.value)
+            # WEATHER
+            if match := re.search(r"weather|rain|sun|temperature", user_input, re.IGNORECASE):
+                city_match = re.search(r"in (\w+)", user_input, re.IGNORECASE)
+                city = city_match.group(1) if city_match else "Aveiro"
+                weather_info = get_weather(city)
+                print(f"Bot: {weather_info}")
+                conversation_log.append(f"Bot: {weather_info}")
 
-        #         gotAFact = False
-        #         for alias in alias_list:
-        #             for relation_key in r_keys:
-        #                 fact = session.query(UserFact).filter_by(user_id=user_id, key=alias.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
-        #                 if fact:
-        #                     gotAFact = True
-        #                     response = f"The {entity.capitalize()} {fact.fact_type} {fact.value}."
-        #                     print(f"Bot: {response}")
-        #                     conversation_log.append(f"Bot: {response}")
-        #                     break
-        #             if gotAFact:
-        #                 break
+            # UPDATE FACT
+            elif match := re.search(r"what is the (\w+) of (.+?)(\?|$)", user_input, re.IGNORECASE):
+                attribute, entity = match.group(1), clean_entity(match.group(2))
 
-        #         if not gotAFact:
-        #             response = f"I don't know anything about {user_input.lower()[:-1]}."
-        #             print(f"Bot: {response}")
-        #             conversation_log.append(f"Bot: {response}")
+                fact = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is").order_by(UserFact.id.desc()).first()
+
+                if fact:
+                    response = f"The {attribute} of the {entity} is {fact.value}."
+                else:
+                    response = f"I don't know the {attribute} of the {entity}."
+
+                print(f"Bot: {response}")
+                conversation_log.append(f"Bot: {response}")
 
 
 
-        #     # WHAT/WHERE DOES/did
-        #     elif match := re.search(r"^(What|Where|Who) (does|did) (.+?) (" + "|".join(map(re.escape, RELATION_VALUES)) + r")(\?|$)", user_input, re.IGNORECASE):
-        #         entity, relation_type = clean_entity(match.group(3)), match.group(4)
-        #         r_keys = get_relation_key(relation_type.lower())
+            # IS/ARE
+            elif match := re.search(r"^(" + "|".join(map(re.escape, RELATION_VALUES)) + r") (is|are) (.+?)(\?|$)", user_input, re.IGNORECASE):
+                relation_type, entity = match.group(1), clean_entity(match.group(3))
+                r_keys = get_relation_key(relation_type.lower())
 
-        #         alias_list = [entity]
-        #         alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")
-        #         for row in alias_facts:
-        #             alias_list.append(row.value)
+                alias_list = [entity]
+                alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")
+                for row in alias_facts:
+                    alias_list.append(row.value)
 
-        #         gotAFact = False
-        #         for alias in alias_list:
-        #             for relation_key in r_keys:
-        #                 fact = session.query(UserFact).filter_by(user_id=user_id, key=alias.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
-        #                 if fact:
-        #                     gotAFact = True
-        #                     response = f"{entity.capitalize()} {fact.fact_type} {fact.value}."
-        #                     print(f"Bot: {response}")
-        #                     conversation_log.append(f"Bot: {response}")
-        #                     break
-        #             if gotAFact:
-        #                 break
+                gotAFact = False
+                for alias in alias_list:
+                    for relation_key in r_keys:
+                        fact = session.query(UserFact).filter_by(user_id=user_id, key=alias.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
+                        if fact:
+                            gotAFact = True
+                            response = f"The {entity.capitalize()} {fact.fact_type} {fact.value}."
+                            print(f"Bot: {response}")
+                            conversation_log.append(f"Bot: {response}")
+                            break
+                    if gotAFact:
+                        break
 
-        #         if not gotAFact:
-        #             response = f"I don't know anything about {user_input.lower()[:-1]}."
-        #             print(f"Bot: {response}")
-        #             conversation_log.append(f"Bot: {response}")
+                if not gotAFact:
+                    response = f"I don't know anything about {user_input.lower()[:-1]}."
+                    print(f"Bot: {response}")
+                    conversation_log.append(f"Bot: {response}")
 
 
-        #     # WHAT/WHERE/WHO does WHAT
-        #     elif match := re.search(r"^(What|Where|Who) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\?|$)", user_input, re.IGNORECASE):
-        #         entity, relation_type = clean_entity(match.group(3)), match.group(2)
 
-        #         alias_list = [entity]
-        #         alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")
-        #         for row in alias_facts:
-        #             alias_list.append(row.value)
+            # WHAT/WHERE DOES/did
+            elif match := re.search(r"^(What|Where|Who) (does|did) (.+?) (" + "|".join(map(re.escape, RELATION_VALUES)) + r")(\?|$)", user_input, re.IGNORECASE):
+                entity, relation_type = clean_entity(match.group(3)), match.group(4)
+                r_keys = get_relation_key(relation_type.lower())
 
-        #         gotAFact = False
-        #         for alias in alias_list:
-        #             fact = session.query(UserFact).filter_by(user_id=user_id, value=alias.lower(), fact_type=relation_type).order_by(UserFact.id.desc()).first()
-        #             if fact:
-        #                 gotAFact = True
-        #                 response = f"{fact.key.capitalize()} {fact.fact_type} {entity}."
-        #                 print(f"Bot: {response}")
-        #                 conversation_log.append(f"Bot: {response}")
-        #                 break
+                alias_list = [entity]
+                alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")
+                for row in alias_facts:
+                    alias_list.append(row.value)
 
-        #         if not gotAFact:
-        #             response = f"I don't know anything about {user_input.lower()[:-1]}."
-        #             print(f"Bot: {response}")
-        #             conversation_log.append(f"Bot: {response}")
+                gotAFact = False
+                for alias in alias_list:
+                    for relation_key in r_keys:
+                        fact = session.query(UserFact).filter_by(user_id=user_id, key=alias.lower(), fact_type=relation_key).order_by(UserFact.id.desc()).first()
+                        if fact:
+                            gotAFact = True
+                            response = f"{entity.capitalize()} {fact.fact_type} {fact.value}."
+                            print(f"Bot: {response}")
+                            conversation_log.append(f"Bot: {response}")
+                            break
+                    if gotAFact:
+                        break
 
-        #     else:
-        #         response = "Could you specify what you're asking about?"
-        #         print(f"Bot: {response}")
-        #         conversation_log.append(f"Bot: {response}")
+                if not gotAFact:
+                    response = f"I don't know anything about {user_input.lower()[:-1]}."
+                    print(f"Bot: {response}")
+                    conversation_log.append(f"Bot: {response}")
+
+
+            # WHAT/WHERE/WHO does WHAT
+            elif match := re.search(r"^(What|Where|Who) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\?|$)", user_input, re.IGNORECASE):
+                entity, relation_type = clean_entity(match.group(3)), match.group(2)
+
+                alias_list = [entity]
+                alias_facts = session.query(UserFact).filter_by(user_id=user_id, key=entity.lower(), fact_type="is a")
+                for row in alias_facts:
+                    alias_list.append(row.value)
+
+                gotAFact = False
+                for alias in alias_list:
+                    fact = session.query(UserFact).filter_by(user_id=user_id, value=alias.lower(), fact_type=relation_type).order_by(UserFact.id.desc()).first()
+                    if fact:
+                        gotAFact = True
+                        response = f"{fact.key.capitalize()} {fact.fact_type} {entity}."
+                        print(f"Bot: {response}")
+                        conversation_log.append(f"Bot: {response}")
+                        break
+
+                if not gotAFact:
+                    response = f"I don't know anything about {user_input.lower()[:-1]}."
+                    print(f"Bot: {response}")
+                    conversation_log.append(f"Bot: {response}")
+
+            else:
+                response = "Could you specify what you're asking about?"
+                print(f"Bot: {response}")
+                conversation_log.append(f"Bot: {response}")
 
         else:  # Fallback generativo
-            response = generate_response(user_input)
+            generated_answer = generate_response(user_input)  
+            response = f"I don’t have that in my knowledge base, but here’s what I know:\n{generated_answer}"  
+            # response = generate_response(user_input)
             print(f"Bot: {response}")
             conversation_log.append(f"Bot: {response}")
 
