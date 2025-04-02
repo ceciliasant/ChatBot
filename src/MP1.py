@@ -49,6 +49,10 @@ def main_chat_loop():
 
     while True:
         user_input = input("You: ").strip()
+
+        if not user_input.isprintable():  
+            print("Bot: Please enter a valid text query.")  
+            continue  
         conversation_log.append(f"You: {user_input}")
 
         if user_input.lower() == 'exit':
@@ -57,6 +61,10 @@ def main_chat_loop():
         # Verificação gramatical
         matches = grammar_tool.check(user_input)
         filtered_matches = [match for match in matches if match.ruleId not in ignored_spellcheck_rules]
+
+        if any(len(match.replacements) == 0 for match in filtered_matches):
+            print("Bot: I can't understand this query. Please rephrase.")
+            continue
 
         for match in filtered_matches:
             suggestion = grammar_tool.correct(user_input)
@@ -75,6 +83,15 @@ def main_chat_loop():
         if intent == "greet":
             response = "Hello! How can I help you today?"
             print(f"Bot: {response}")
+            conversation_log.append(f"Bot: {response}")
+
+        elif intent == "vague_prompt":
+            response = "Here's an interesting fact: " + generate_response("Tell me a random fact.")
+            print(f"Bot: {response}")
+            conversation_log.append(f"Bot: {response}")
+
+        elif intent == "social":
+            print(f"Bot: You're welcome! 😊")
             conversation_log.append(f"Bot: {response}")
 
         elif intent == "store_fact":
@@ -224,7 +241,9 @@ def main_chat_loop():
                 conversation_log.append(f"Bot: {response}")
 
         else:  # Fallback generativo
-            response = generate_response(user_input)
+            generated_answer = generate_response(user_input)  
+            response = f"I don’t have that in my knowledge base, but here’s what I know:\n{generated_answer}"  
+            # response = generate_response(user_input)
             print(f"Bot: {response}")
             conversation_log.append(f"Bot: {response}")
 
@@ -232,10 +251,8 @@ def main_chat_loop():
     # Gravação da conversa
     # --------------------------
     save = input("Bot: Do you want to save this conversation? [Y/N]\nYou: ").strip().lower()
-    conversation_log.append(f"You: {save}")
     if save in ["y", "yes", "s", "sim"]:
         file_name = input("Bot: What should be the name of the file?\nYou: ").strip()
-        conversation_log.append(f"You: {file_name}")
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         os.makedirs("chats", exist_ok=True)
         path = os.path.join("chats", f"{file_name}_{timestamp}.txt")

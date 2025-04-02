@@ -6,4 +6,6 @@ intent_patterns = {
     "retrieve_info": r"^.*\?$",
     "ask_weather": r"weather|rain|sun|temperature",
     "store_fact": r"^(.+?) (" + "|".join(map(re.escape, RELATION_KEYS)) + r") (.+?)(\.|$)",
+    "vague_prompt": r"tell me something|something interesting|a fact",
+    "social": r"\b(thanks|thank you)\b",
 }
